@@ -30,21 +30,52 @@ struct SMCVal_t {
 // MARK: - SMC Class
 public class SMC {
     private var connection: io_connect_t = 0
+    private var connectionError: String?
     
     public init?() {
+        print("DEBUG: Initializing SMC connection...")
+        
         let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("AppleSMC"))
-        guard service != 0 else { return nil }
+        guard service != 0 else {
+            connectionError = "AppleSMC service not found. This may be a virtual machine or SMC is not available."
+            print("ERROR: \(connectionError!)")
+            return nil
+        }
+        
+        print("DEBUG: AppleSMC service found (handle: \(service))")
         
         let result = IOServiceOpen(service, mach_task_self_, 0, &connection)
         IOObjectRelease(service)
         
-        guard result == kIOReturnSuccess else { return nil }
+        guard result == kIOReturnSuccess else {
+            connectionError = "Failed to open SMC service. Error code: \(result). SMC access may be restricted."
+            print("ERROR: \(connectionError!)")
+            return nil
+        }
+        
+        print("DEBUG: SMC connection established (connection: \(connection))")
+        
+        // Test if we can actually read from SMC
+        if readKey("TC0P") == nil && readKey("FNum") == nil && readKey("FS! ") == nil {
+            connectionError = "SMC connection established but no keys are readable. This Mac may not support SMC access via IOKit."
+            print("WARNING: \(connectionError!)")
+        } else {
+            print("DEBUG: SMC is readable and working")
+        }
     }
     
     deinit {
         if connection != 0 {
             IOServiceClose(connection)
         }
+    }
+    
+    public func getConnectionError() -> String? {
+        return connectionError
+    }
+    
+    public func isConnected() -> Bool {
+        return connection != 0
     }
     
     // MARK: - Public Methods
@@ -57,8 +88,46 @@ public class SMC {
     
     /// Get number of fans
     public func getFanCount() -> Int? {
-        guard let value = readKey("FNum") else { return nil }
-        return Int(value.bytes.0)
+        print("DEBUG: Attempting to read FNum key...")
+        if let value = readKey("FNum") {
+            let count = Int(value.bytes.0)
+            print("DEBUG: Fan count from SMC: \(count)")
+            return count
+        }
+        
+        print("DEBUG: FNum key not available, trying fallback detection...")
+        
+        // Test various key formats that might be used for fans
+        let testKeys = [
+            "F0Ac", "F1Ac", "F2Ac",  // Standard format
+            "FS! ", "F0ID",           // Fan count/ID keys
+            "FNum", "#FNS"            // Alternative count keys
+        ]
+        
+        print("DEBUG: Testing various SMC keys...")
+        for testKey in testKeys {
+            if let value = readKey(testKey) {
+                print("DEBUG: Key '\(testKey)' exists! Bytes: \(value.bytes.0), \(value.bytes.1), \(value.bytes.2), \(value.bytes.3)")
+            }
+        }
+        
+        // Fallback: probe for fans by trying to read their RPM
+        var fanCount = 0
+        for i in 0..<10 { // Try up to 10 fans
+            let key = String(format: "F%dAc", i)
+            print("DEBUG: Trying key: \(key)")
+            if let value = readKey(key) {
+                fanCount = i + 1
+                print("DEBUG: Found fan at index \(i), RPM bytes: \(value.bytes.0), \(value.bytes.1)")
+            } else {
+                print("DEBUG: Key \(key) not found")
+                // Stop at first missing fan
+                break
+            }
+        }
+        
+        print("DEBUG: Detected \(fanCount) fans via fallback method")
+        return fanCount > 0 ? fanCount : nil
     }
     
     /// Read fan RPM

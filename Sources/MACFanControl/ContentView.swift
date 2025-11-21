@@ -152,7 +152,24 @@ struct FansSection: View {
                     .font(.headline)
             }
             
-            if manager.fans.isEmpty {
+            if let errorMessage = manager.errorMessage {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("Erro de Detecção")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                    }
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding()
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(8)
+            } else if manager.fans.isEmpty {
                 Text("Nenhum ventilador detectado")
                     .foregroundColor(.secondary)
                     .padding()

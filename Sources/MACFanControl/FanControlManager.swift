@@ -39,6 +39,7 @@ public class FanControlManager: ObservableObject {
     @Published public var autoMode: Bool = true
     @Published public var targetTemperature: Double = 60.0
     @Published public var isConnected: Bool = false
+    @Published public var errorMessage: String?
     
     private var smc: SMC?
     private var timer: Timer?
@@ -49,16 +50,30 @@ public class FanControlManager: ObservableObject {
     }
     
     private func setupSMC() {
+        print("DEBUG: Setting up SMC...")
         smc = SMC()
         isConnected = smc != nil
         
         if let smc = smc {
+            if let error = smc.getConnectionError() {
+                errorMessage = error
+                print("WARNING: SMC has connection issues: \(error)")
+            }
             loadFans(smc: smc)
+        } else {
+            errorMessage = "Não foi possível conectar ao SMC. Verifique se você está executando em um Mac real (não funciona em máquinas virtuais) e se tem as permissões necessárias."
+            print("ERROR: Failed to initialize SMC")
         }
     }
     
     private func loadFans(smc: SMC) {
-        guard let fanCount = smc.getFanCount() else { return }
+        print("DEBUG: loadFans called")
+        guard let fanCount = smc.getFanCount() else { 
+            print("DEBUG: getFanCount returned nil")
+            errorMessage = "Não foi possível detectar ventiladores. Este Mac pode não suportar controle de ventiladores via SMC, ou você pode estar usando Apple Silicon com restrições de acesso ao hardware."
+            return 
+        }
+        print("DEBUG: Loading \(fanCount) fans...")
         
         var loadedFans: [FanInfo] = []
         
