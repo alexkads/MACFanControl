@@ -193,6 +193,7 @@ public class FanControlManager: ObservableObject {
     }
     
     deinit {
-        stopMonitoring()
+        timer?.invalidate()
+        timer = nil
     }
 }

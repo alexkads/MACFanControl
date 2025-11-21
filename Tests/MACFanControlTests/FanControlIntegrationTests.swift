@@ -21,7 +21,7 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Full Lifecycle Tests
     
     @MainActor
-    func testFullLifecycle() async {
+    func testFullLifecycle() async throws {
         // Testa ciclo completo: inicialização -> monitoramento -> controle -> cleanup
         
         manager.startMonitoring()
@@ -53,7 +53,7 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Real Hardware Tests
     
     @MainActor
-    func testRealHardwareDetection() {
+    func testRealHardwareDetection() throws {
         if manager.isConnected {
             XCTAssertTrue(manager.isConnected, "Should be connected to SMC on real Mac")
             
@@ -62,14 +62,14 @@ final class FanControlIntegrationTests: XCTestCase {
             print("Fans detected: \(manager.fans.count)")
             print("Temperatures detected: \(manager.temperatures.count)")
         } else {
-            XCTSkip("SMC not available - running on VM or non-Mac hardware")
+            throw XCTSkip("SMC not available - running on VM or non-Mac hardware")
         }
     }
     
     @MainActor
-    func testReadRealTemperatures() {
+    func testReadRealTemperatures() throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         let expectation = XCTestExpectation(description: "Wait for temperature update")
@@ -89,9 +89,9 @@ final class FanControlIntegrationTests: XCTestCase {
     }
     
     @MainActor
-    func testReadRealFanSpeeds() {
+    func testReadRealFanSpeeds() throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         let expectation = XCTestExpectation(description: "Wait for fan update")
@@ -118,9 +118,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Auto Mode Integration Tests
     
     @MainActor
-    func testAutoModeWithRealData() async {
+    func testAutoModeWithRealData() async throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         manager.setAutoMode(enabled: true)
@@ -136,9 +136,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Manual Mode Integration Tests
     
     @MainActor
-    func testManualModeWithRealData() async {
+    func testManualModeWithRealData() async throws {
         guard manager.isConnected, manager.fans.count > 0 else {
-            XCTSkip("SMC or fans not available")
+            throw XCTSkip("SMC or fans not available")
         }
         
         let originalRPM = manager.fans[0].currentRPM
@@ -163,9 +163,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Stress Tests
     
     @MainActor
-    func testRapidModeChanges() async {
+    func testRapidModeChanges() async throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         // Alterna rapidamente entre modos
@@ -182,9 +182,9 @@ final class FanControlIntegrationTests: XCTestCase {
     }
     
     @MainActor
-    func testRapidTargetTemperatureChanges() async {
+    func testRapidTargetTemperatureChanges() async throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         manager.setAutoMode(enabled: true)
@@ -201,9 +201,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Long Running Tests
     
     @MainActor
-    func testLongRunningMonitoring() async {
+    func testLongRunningMonitoring() async throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         manager.startMonitoring()
@@ -229,7 +229,7 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Error Recovery Tests
     
     @MainActor
-    func testRecoveryFromSMCDisconnection() {
+    func testRecoveryFromSMCDisconnection() throws {
         // Simula perda de conexão
         manager.stopMonitoring()
         manager.isConnected = false
@@ -245,9 +245,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Memory Tests
     
     @MainActor
-    func testMemoryLeakOnRepeatedStartStop() async {
+    func testMemoryLeakOnRepeatedStartStop() async throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         // Inicia e para várias vezes
@@ -264,9 +264,9 @@ final class FanControlIntegrationTests: XCTestCase {
     // MARK: - Performance Tests
     
     @MainActor
-    func testMonitoringUpdatePerformance() {
+    func testMonitoringUpdatePerformance() throws {
         guard manager.isConnected else {
-            XCTSkip("SMC not available")
+            throw XCTSkip("SMC not available")
         }
         
         manager.startMonitoring()

@@ -17,7 +17,7 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Connection Tests
     
-    func testSMCConnection() {
+    func testSMCConnection() throws {
         // Verifica se conseguimos conectar ao SMC
         // Em uma VM ou ambiente sem SMC, isso falhará graciosamente
         
@@ -31,9 +31,9 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Fan Count Tests
     
-    func testGetFanCount() {
+    func testGetFanCount() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         let fanCount = smc.getFanCount()
@@ -46,9 +46,9 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Temperature Reading Tests
     
-    func testReadCPUTemperature() {
+    func testReadCPUTemperature() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         let temp = smc.readTemperature(key: "TC0P")
@@ -59,9 +59,9 @@ final class SMCIntegrationTests: XCTestCase {
         }
     }
     
-    func testReadMultipleTemperatures() {
+    func testReadMultipleTemperatures() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         let temperatures = smc.getAllTemperatures()
@@ -76,13 +76,13 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Fan RPM Tests
     
-    func testReadFanRPM() {
+    func testReadFanRPM() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         guard let fanCount = smc.getFanCount(), fanCount > 0 else {
-            XCTSkip("No fans detected")
+            throw XCTSkip("No fans detected")
         }
         
         let rpm = smc.readFanRPM(index: 0)
@@ -93,13 +93,13 @@ final class SMCIntegrationTests: XCTestCase {
         }
     }
     
-    func testReadFanMinMaxRPM() {
+    func testReadFanMinMaxRPM() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         guard let fanCount = smc.getFanCount(), fanCount > 0 else {
-            XCTSkip("No fans detected")
+            throw XCTSkip("No fans detected")
         }
         
         let minRPM = smc.readFanMinRPM(index: 0)
@@ -112,13 +112,13 @@ final class SMCIntegrationTests: XCTestCase {
         }
     }
     
-    func testReadAllFans() {
+    func testReadAllFans() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         guard let fanCount = smc.getFanCount(), fanCount > 0 else {
-            XCTSkip("No fans detected")
+            throw XCTSkip("No fans detected")
         }
         
         for i in 0..<fanCount {
@@ -134,13 +134,13 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Fan Control Tests
     
-    func testSetFanMode() {
+    func testSetFanMode() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         guard let fanCount = smc.getFanCount(), fanCount > 0 else {
-            XCTSkip("No fans detected")
+            throw XCTSkip("No fans detected")
         }
         
         // Cuidado: este teste modifica configurações do hardware
@@ -158,9 +158,9 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Error Handling Tests
     
-    func testReadInvalidFanIndex() {
+    func testReadInvalidFanIndex() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         // Tenta ler um índice de ventilador que não existe
@@ -169,9 +169,9 @@ final class SMCIntegrationTests: XCTestCase {
         XCTAssertNil(rpm, "Reading invalid fan index should return nil")
     }
     
-    func testReadInvalidTemperatureKey() {
+    func testReadInvalidTemperatureKey() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         // Tenta ler uma key que não existe
@@ -182,9 +182,9 @@ final class SMCIntegrationTests: XCTestCase {
     
     // MARK: - Performance Tests
     
-    func testReadTemperaturePerformance() {
+    func testReadTemperaturePerformance() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         measure {
@@ -192,9 +192,9 @@ final class SMCIntegrationTests: XCTestCase {
         }
     }
     
-    func testReadFanRPMPerformance() {
+    func testReadFanRPMPerformance() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         guard let fanCount = smc.getFanCount(), fanCount > 0 else {
@@ -206,9 +206,9 @@ final class SMCIntegrationTests: XCTestCase {
         }
     }
     
-    func testGetAllTemperaturesPerformance() {
+    func testGetAllTemperaturesPerformance() throws {
         guard let smc = smc else {
-            XCTSkip("SMC not available - skipping hardware test")
+            throw XCTSkip("SMC not available - skipping hardware test")
         }
         
         measure {
