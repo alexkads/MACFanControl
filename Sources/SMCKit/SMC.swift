@@ -296,4 +296,65 @@ public class SMC {
     private func encodeFPE2(_ value: Int) -> UInt16 {
         return UInt16(value << 2)
     }
+    
+    // MARK: - Key Discovery
+    
+    public func getAllKeys() -> [String] {
+        guard let countVal = readKey("#KEY") else { return [] }
+        let count = Int(decodeUInt32(countVal))
+        print("DEBUG: Total SMC keys found: \(count)")
+        
+        var keys: [String] = []
+        for i in 0..<count {
+            if let key = getKeyFromIndex(i) {
+                keys.append(key)
+            }
+        }
+        return keys
+    }
+    
+    private func getKeyFromIndex(_ index: Int) -> String? {
+        var inputStruct = SMCVal_t()
+        var outputStruct = SMCVal_t()
+        
+        inputStruct.dataSize = 4
+        inputStruct.dataType = fourCharCode("ui32")
+        inputStruct.key = fourCharCode("#KEY")
+        inputStruct.bytes.0 = UInt8((index >> 24) & 0xFF)
+        inputStruct.bytes.1 = UInt8((index >> 16) & 0xFF)
+        inputStruct.bytes.2 = UInt8((index >> 8) & 0xFF)
+        inputStruct.bytes.3 = UInt8(index & 0xFF)
+        
+        let inputStructSize = MemoryLayout<SMCVal_t>.size
+        var outputStructSize = inputStructSize
+        
+        let result = IOConnectCallStructMethod(
+            connection,
+            5, // kSMCUserClientRead
+            &inputStruct,
+            inputStructSize,
+            &outputStruct,
+            &outputStructSize
+        )
+        
+        guard result == kIOReturnSuccess else { return nil }
+        return toString(outputStruct.key)
+    }
+    
+    private func decodeUInt32(_ value: SMCVal_t) -> UInt32 {
+        return (UInt32(value.bytes.0) << 24) |
+               (UInt32(value.bytes.1) << 16) |
+               (UInt32(value.bytes.2) << 8) |
+               UInt32(value.bytes.3)
+    }
+    
+    private func toString(_ code: UInt32) -> String {
+        let bytes = [
+            UInt8((code >> 24) & 0xFF),
+            UInt8((code >> 16) & 0xFF),
+            UInt8((code >> 8) & 0xFF),
+            UInt8(code & 0xFF)
+        ]
+        return String(bytes: bytes, encoding: .ascii) ?? ""
+    }
 }
